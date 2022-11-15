@@ -5,7 +5,7 @@ const Users = require('../models/UserModel.js');
 const getUsers = async(req, res) => {
     try {
         const users = await Users.findAll({
-            attributes:['id','name','email']
+            attributes:['id','firstName','email']
         });
         res.json(users);
     } catch (error) {
@@ -14,13 +14,14 @@ const getUsers = async(req, res) => {
 }
  
 const Register = async(req, res) => {
-    const { name, email, password, confPassword } = req.body;
+    const { firstName, lastName,email, password, confPassword } = req.body;
     if(password !== confPassword) return res.status(400).json({msg: "Password and Confirm Password do not match"});
     const salt = await bcrypt.genSalt();
     const hashPassword = await bcrypt.hash(password, salt);
     try {
         await Users.create({
-            name: name,
+            firstName:firstName,
+            lastName:lastName,
             email: email,
             password: hashPassword
         });
@@ -40,12 +41,12 @@ const Login = async(req, res) => {
         const match = await bcrypt.compare(req.body.password, user[0].password);
         if(!match) return res.status(400).json({msg: "Wrong Password"});
         const userId = user[0].id;
-        const name = user[0].name;
+        const firstName = user[0].firstName;
         const email = user[0].email;
-        const accessToken = jwt.sign({userId, name, email}, process.env.ACCESS_TOKEN_SECRET,{
+        const accessToken = jwt.sign({userId, firstName, email}, process.env.ACCESS_TOKEN_SECRET,{
             expiresIn: '15s'
         });
-        const refreshToken = jwt.sign({userId, name, email}, process.env.REFRESH_TOKEN_SECRET,{
+        const refreshToken = jwt.sign({userId, firstName, email}, process.env.REFRESH_TOKEN_SECRET,{
             expiresIn: '1d'
         });
         await Users.updateOne({refresh_token: refreshToken},{
