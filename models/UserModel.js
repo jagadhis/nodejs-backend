@@ -8,6 +8,4 @@ const userSchema = new mongoose.Schema({
   token: { type: String },
 });
 
-const UserModel = mongoose.model("user", userSchema);
-
-export default UserModel;
+module.exports = mongoose.model("user", userSchema);

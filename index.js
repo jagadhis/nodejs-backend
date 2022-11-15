@@ -1,10 +1,10 @@
-import express from "express";
-import dotenv from "dotenv";
-import cookieParser from "cookie-parser";
-import cors from "cors";
+require("dotenv").config();
+require("./config/Database").connect();
+const cors = require('cors');
+const cookieParser = require('cookie-parser')
+const router = require('./routes/index.js')
+const express = require("express");
 
-import router from "./routes/index.js";
-dotenv.config();
 const app = express();
  
 app.use(cors({ credentials:true, origin:'http://localhost:3000' }));
