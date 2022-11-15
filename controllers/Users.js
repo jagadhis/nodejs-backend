@@ -14,18 +14,20 @@ const getUsers = async(req, res) => {
 }
  
 const Register = async(req, res) => {
+     try {
     const { firstName, lastName,email, password, confPassword } = req.body;
     if(password !== confPassword) return res.status(400).json({msg: "Password and Confirm Password do not match"});
     const salt = await bcrypt.genSalt();
     const hashPassword = await bcrypt.hash(password, salt);
-    try {
-        await Users.create({
+   
+       const Users =  await Users.create({
             firstName:firstName,
             lastName:lastName,
             email: email,
             password: hashPassword
         });
-        res.json({msg: "Registration Successful"});
+        // res.json({msg: "Registration Successful"});
+        res.status(201).json(Users);
     } catch (error) {
         console.log(error);
     }
@@ -44,7 +46,7 @@ const Login = async(req, res) => {
         const firstName = user[0].firstName;
         const email = user[0].email;
         const accessToken = jwt.sign({userId, firstName, email}, process.env.ACCESS_TOKEN_SECRET,{
-            expiresIn: '15s'
+            expiresIn: '1d'
         });
         const refreshToken = jwt.sign({userId, firstName, email}, process.env.REFRESH_TOKEN_SECRET,{
             expiresIn: '1d'
@@ -54,6 +56,7 @@ const Login = async(req, res) => {
                 id: userId
             }
         });
+        res.setHeader('x-access-token', 'Bearer '+ accessToken);
         res.cookie('refreshToken', refreshToken,{
             httpOnly: true,
             maxAge: 24 * 60 * 60 * 1000
