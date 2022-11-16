@@ -4,9 +4,7 @@ const Users = require('../models/UserModel.js');
  
 const getUsers = async(req, res) => {
     try {
-        const users = await Users.findAll({
-            attributes:['id','firstName','email']
-        });
+       
         res.json(users);
     } catch (error) {
         console.log(error);
@@ -27,6 +25,12 @@ const Register = async(req, res) => {
             password: hashPassword
         });
         // res.json({msg: "Registration Successful"});
+        const accessToken = jwt.sign({userId:User._id, email}, process.env.ACCESS_TOKEN_SECRET,{
+            expiresIn: '1d'
+        });
+        User.accessToken = accessToken;
+        res.setHeader('x-access-token', 'Bearer '+ accessToken);
+      res.json(accessToken);
         res.status(201).json(User);
     } catch (error) {
         console.log(error);
@@ -35,33 +39,20 @@ const Register = async(req, res) => {
  
 const Login = async(req, res) => {
     try {
-        const user = await Users.findAll({
-            where:{
-                email: req.body.email
-            }
-        });
-        const match = await bcrypt.compare(req.body.password, user[0].password);
+
+        const email = req.body;
+        const user = await Users.findOne({ email });
+        const match = await bcrypt.compare(password,user.password);
         if(!match) return res.status(400).json({msg: "Wrong Password"});
-        const userId = user[0].id;
-        const firstName = user[0].firstName;
-        const email = user[0].email;
-        const accessToken = jwt.sign({userId, firstName, email}, process.env.ACCESS_TOKEN_SECRET,{
+      
+        const accessToken = jwt.sign({userId:user._id, email}, process.env.ACCESS_TOKEN_SECRET,{
             expiresIn: '1d'
         });
-        const refreshToken = jwt.sign({userId, firstName, email}, process.env.REFRESH_TOKEN_SECRET,{
-            expiresIn: '1d'
-        });
-        await Users.updateOne({refresh_token: refreshToken},{
-            where:{
-                id: userId
-            }
-        });
+     
+       
         res.setHeader('x-access-token', 'Bearer '+ accessToken);
-        res.cookie('refreshToken', refreshToken,{
-            httpOnly: true,
-            maxAge: 24 * 60 * 60 * 1000
-        });
-        res.json({ accessToken });
+       
+        return res.status(200).json(user);
     } catch (error) {
         res.status(404).json({msg:"Email not found"});
     }
